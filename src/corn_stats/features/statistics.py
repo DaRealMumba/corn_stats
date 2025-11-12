@@ -127,7 +127,8 @@ def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = offensive_rebound_percentage(df)
     df = defensive_rebound_percentage(df)
 
-    df = calculate_possessions(df)
+    df = calculate_average_possessions(df)
+    df = calculate_total_possessions(df)
     df = calculate_offensive_rating(df)
     df = calculate_defensive_rating(df)
     df = turnover_percentage(df)
