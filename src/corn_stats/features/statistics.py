@@ -92,19 +92,19 @@ def calculate_total_possessions(df: pd.DataFrame, output_col: str = "POSS_Tot") 
 
 def calculate_offensive_rating(df: pd.DataFrame, output_col: str = "Off_Rating") -> pd.DataFrame:
     df = df.copy()
-    df[output_col] = (100 * df["PTS_Avg"] / df["POSS"]).round(1)
+    df[output_col] = (100 * df["PTS_Avg"] / df["POSS_Avg"]).round(1)
     return df
 
 
 def calculate_defensive_rating(df: pd.DataFrame, output_col: str = "Def_Rating") -> pd.DataFrame:
     df = df.copy()
-    df[output_col] = (100 * df["Pts_Allowed_Avg"] / df["POSS"]).round(1)
+    df[output_col] = (100 * df["Pts_Allowed_Avg"] / df["POSS_Avg"]).round(1)
     return df
 
 
 def turnover_percentage(df: pd.DataFrame, output_col: str = "TO_%") -> pd.DataFrame:
     df = df.copy()
-    df[output_col] = ((df["TO_Avg"] / df["POSS"]) * 100).round(2)
+    df[output_col] = ((df["TO_Avg"] / df["POSS_Avg"]) * 100).round(2)
     return df
 
 
