@@ -47,6 +47,7 @@ def get_league_table(table_url: str) -> pd.DataFrame:
 
     selected["Games"] = selected["Wins"] + selected["Losses"]
     selected["Points_Diff"] = selected["Scored"] - selected["Allowed"]
+    selected["Pts_Scored_Avg"] = (selected["Scored"] / selected["Games"]).round(1)
     selected["Pts_Allowed_Avg"] = (selected["Allowed"] / selected["Games"]).round(1)
 
     team_data = selected["Team"].apply(clean_team_name)
