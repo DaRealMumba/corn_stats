@@ -78,9 +78,15 @@ def defensive_rebound_percentage(df: pd.DataFrame, output_col: str = "DRB_%") ->
     return df
 
 
-def calculate_possessions(df: pd.DataFrame, output_col: str = "POSS") -> pd.DataFrame:
+def calculate_average_possessions(df: pd.DataFrame, output_col: str = "POSS_Avg") -> pd.DataFrame:
     df = df.copy()
     df[output_col] = (df["FGA_Avg"] - df["ORB_Avg"] + df["TO_Avg"] + 0.44 * df["FTA_Avg"]).round(1)
+    return df
+
+
+def calculate_total_possessions(df: pd.DataFrame, output_col: str = "POSS_Tot") -> pd.DataFrame:
+    df = df.copy()
+    df[output_col] = (df["FGA_Tot"] - df["ORB_Tot"] + df["TO_Tot"] + 0.44 * df["FTA_Tot"]).round(1)
     return df
 
 
