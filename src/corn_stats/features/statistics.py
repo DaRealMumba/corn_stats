@@ -141,11 +141,13 @@ def offensive_rebound_percentage(df: pd.DataFrame, output_col: str = "ORB_%") ->
 def defensive_rebound_percentage(df: pd.DataFrame, output_col: str = "DRB_%") -> pd.DataFrame:
     """
     Calculate defensive rebound percentage.
-    Formula: 100 - ORB_%
+    Formula: DRB_Tot / (DRB_Tot + ORB_League_Avg * Games) * 100
     """
     df = df.copy()
-    _validate_columns(df, {"ORB_%"}, "defensive_rebound_percentage")
-    df[output_col] = (100 - df["ORB_%"]).round(2)
+    _validate_columns(df, {"ORB_%", "DRB_Tot", "Games"}, "defensive_rebound_percentage")
+    league_avg_orb = sum(df["ORB_Tot"]) / sum(df["Games"])
+    denominator = df["DRB_Tot"] + league_avg_orb * df["Games"]
+    df[output_col] = (_safe_divide(df["DRB_Tot"], denominator, default=0.0) * 100).round(2)
     return df
 
 
