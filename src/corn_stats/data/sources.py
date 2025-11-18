@@ -29,6 +29,26 @@ def get_league_table(table_url: str) -> pd.DataFrame:
     scored_col = find(["poeni +", "+"])
     allowed_col = find(["poeni -", "-"])
 
+    missing_cols = []
+    if team_col is None:
+        missing_cols.append("team (ekipa)")
+    if points_col is None:
+        missing_cols.append("points (bodovi)")
+    if wins_col is None:
+        missing_cols.append("wins (pobede)")
+    if losses_col is None:
+        missing_cols.append("losses (porazi)")
+    if scored_col is None:
+        missing_cols.append("scored (poeni +)")
+    if allowed_col is None:
+        missing_cols.append("allowed (poeni -)")
+
+    if missing_cols:
+        raise ValueError(
+            f"Could not find required columns in league table: {', '.join(missing_cols)}. "
+            f"Available columns: {list(df.columns)}"
+        )
+
     selected = df[[team_col, points_col, wins_col, losses_col, scored_col, allowed_col]].copy()
     selected.columns = ["Team", "Points", "Wins", "Losses", "Scored", "Allowed"]
 
@@ -47,11 +67,26 @@ def get_league_table(table_url: str) -> pd.DataFrame:
 
     selected["Games"] = selected["Wins"] + selected["Losses"]
     selected["Points_Diff"] = selected["Scored"] - selected["Allowed"]
-    selected["Pts_Allowed_Avg"] = (selected["Allowed"] / selected["Games"]).round(1)
+    
+    # Avoid division by zero if Games is 0
+    games_mask = selected["Games"] > 0
+    selected.loc[games_mask, "Pts_Scored_Avg"] = (
+        selected.loc[games_mask, "Scored"] / selected.loc[games_mask, "Games"]
+    ).round(1)
+    selected.loc[~games_mask, "Pts_Scored_Avg"] = 0.0
+    
+    selected.loc[games_mask, "Pts_Allowed_Avg"] = (
+        selected.loc[games_mask, "Allowed"] / selected.loc[games_mask, "Games"]
+    ).round(1)
+    selected.loc[~games_mask, "Pts_Allowed_Avg"] = 0.0
 
     team_data = selected["Team"].apply(clean_team_name)
     selected["Team"] = team_data.apply(lambda x: x[0])
     selected["Abbr"] = team_data.apply(lambda x: x[1])
+
+    # Set position as index (1-based ranking instead of 0-11)
+    selected.index = range(1, len(selected) + 1)
+    selected.index.name = "Position"
 
     return selected
 
@@ -137,12 +172,23 @@ def parse_team_page_wide(team_url: str, league_table_df: pd.DataFrame | None = N
             float, (match.group(1), match.group(2), match.group(3), match.group(4))
         )
 
-    for metric in ("AST", "TO", "STL", "BLK", "PFD", "PTS"):
+    # Parse metrics (excluding PTS - it's already in league table as Scored/Pts_Scored_Avg)
+    for metric in ("AST", "TO", "STL", "BLK", "PFD"):
         if match := re.search(
             rf"{metric}\s+Prosečno\s+([\d.]+).*?Ukupno\s+([\d.]+)", text, re.DOTALL
         ):
             result[f"{metric}_Avg"], result[f"{metric}_Tot"] = map(float, (match.group(1), match.group(2)))
 
+    # Validate that at least some basic stats were found
+    required_stats = ["FGA_Avg", "FGM_Avg"]
+    found_stats = [stat for stat in required_stats if stat in result]
+    
+    if not found_stats:
+        raise ValueError(
+            f"Could not parse any team statistics from {team_url}. "
+            f"Page structure may have changed or team page is empty."
+        )
+    
     dataframe = pd.DataFrame([result])
     priority_cols = ["Team", "Abbr"]
     other_cols = [c for c in dataframe.columns if c not in priority_cols]

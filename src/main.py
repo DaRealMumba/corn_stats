@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Iterable
 
@@ -9,15 +8,16 @@ import streamlit as st
 from requests import RequestException
 
 from corn_stats.config import (
-    LOGO_DIR,
     TABLES_DATA_PATH,
     TABLE_URL,
     TEAMS,
     TEAMS_DATA_PATH,
     TEAMS_URL,
+    TEAM_STATS_COLUMN_ORDER,
 )
 from corn_stats.data import get_league_table, parse_team_page_wide
 from corn_stats.features import calculate_all_advanced_stats
+from corn_stats.ui import render_glossary
 from corn_stats.viz import scatter_with_logos_plotly
 
 LEAGUE_TABLE_FILE = TABLES_DATA_PATH / "north_liga_df.csv"
@@ -29,15 +29,34 @@ def _ensure_parent(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
+def reorder_team_stats_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Reorder columns in team stats DataFrame according to TEAM_STATS_COLUMN_ORDER.
+    
+    Columns not in the order list will be appended at the end.
+    """
+    df = df.copy()
+    
+    # Get columns that exist in DataFrame
+    ordered_cols = [col for col in TEAM_STATS_COLUMN_ORDER if col in df.columns]
+    
+    # Get remaining columns (not in order list)
+    remaining_cols = [col for col in df.columns if col not in TEAM_STATS_COLUMN_ORDER]
+    
+    # Reorder: ordered columns first, then remaining
+    return df[ordered_cols + remaining_cols]
+
+
 @st.cache_data(show_spinner=False)
 def load_league_table(force_refresh: bool = False) -> pd.DataFrame:
     if force_refresh or not LEAGUE_TABLE_FILE.exists():
         _ensure_parent(LEAGUE_TABLE_FILE)
         df = get_league_table(TABLE_URL)
-        df.to_csv(LEAGUE_TABLE_FILE, index=False)
+        df.to_csv(LEAGUE_TABLE_FILE, index=True)
         return df
 
-    return pd.read_csv(LEAGUE_TABLE_FILE)
+    df = pd.read_csv(LEAGUE_TABLE_FILE, index_col=0)
+    df.index.name = "Position"
+    return df
 
 
 @st.cache_data(show_spinner=False)
@@ -98,9 +117,7 @@ def render_ratings_chart(df: pd.DataFrame) -> None:
         x="Off_Rating",
         y="Def_Rating",
         logo_size_factor=0.15,
-        # team_col="Team",
         title="Offensive vs Defensive Rating",
-        # logo_dirs=[LOGO_DIR],
         hover_data=["Net_Rating"],
     )
     st.plotly_chart(fig, width="stretch")
@@ -109,11 +126,32 @@ def render_ratings_chart(df: pd.DataFrame) -> None:
 def main() -> None:
     st.set_page_config(page_title="Corn Liga – North", layout="wide")
     st.title("Corn Liga North – Team Dashboard")
-
+    
+    # Description
+    st.markdown("""
+    This is an analytics dashboard for the amateur Serbian basketball league North Division.
+    Data is available for the 2025/2026 season and updated weekly.
+    
+    Information about metrics is available in the glossary.
+    
+    Source: [cornliga.com](https://cornliga.com/seasons/2025-26/leagues/north-liga)
+    """)
+    
     with st.sidebar:
         st.header("Data controls")
         refresh_league = st.button("Refresh league table")
         refresh_teams = st.button("Refresh team stats")
+        
+        st.divider()
+        
+        with st.expander("📖 Glossary", expanded=False):
+            render_glossary()
+
+    if refresh_league:
+        load_league_table.clear()
+        load_team_stats.clear()
+    elif refresh_teams:
+        load_team_stats.clear()
 
     try:
         league_df = load_league_table(force_refresh=refresh_league)
@@ -130,6 +168,8 @@ def main() -> None:
             league_df,
             force_refresh=refresh_teams or refresh_league,
         )
+        # Reorder columns for better readability
+        team_stats = reorder_team_stats_columns(team_stats)
     except RequestException as exc:
         st.error(f"Failed to download team statistics: {exc}")
         return

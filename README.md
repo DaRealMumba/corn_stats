@@ -1,27 +1,39 @@
 # Corn Stats
 
-An analytics playground for the amateur Basketball League (Corn Liga) in Belgrade, specifially North Liga. The repository contains scraping helpers, data processing utilities, advanced team metrics, and a starter layout for a Streamlit dashboard.
+An analytics dashboard for the amateur Serbian basketball league North Division. The repository contains scraping helpers, data processing utilities, advanced team metrics, and a multi-page Streamlit dashboard.
 
 ## Features
 
-- **Data ingestion** — `corn_stats.data` pulls the league table and team pages straight from the official website.
-- **Advanced metrics** — `corn_stats.features` computes eFG%, TS%, Net Rating, and a set of other team indicators.
+- **Data ingestion** — `corn_stats.data` pulls the league table and team pages straight from [cornliga.com](https://cornliga.com).
+- **Advanced metrics** — `corn_stats.features` computes eFG%, TS%, Net Rating, Pace, and a comprehensive set of team indicators.
 - **Visualizations** — `corn_stats.viz` produces interactive Plotly charts featuring team logos.
+- **UI components** — `corn_stats.ui` provides reusable Streamlit components like glossary.
+- **Streamlit dashboard** — Multi-page web application with team statistics, charts, and data downloads.
 - **Exploratory notebooks** — `notebooks/draft.ipynb` documents the analysis workflow and experiments.
 
 ## Repository Layout
 
 ```
-assets/              # Team logos
+assets/
+  logos/             # Team logos
 data/
-  tables/            # League table CSV
-  teams/             # Team-level stats CSV
+  processed/         # Processed team statistics CSV
+  raw/
+    tables/          # League table CSV
+    teams/           # Raw team-level stats CSV
 notebooks/
-  draft.ipynb        # Current exploratory notebook
+  draft.ipynb        # Exploratory notebook with visualizations
 src/
-  corn_stats/        # Main package (config, data, features, viz)
-  main.py            # Streamlit entry-point scaffold
-  pages/             # Streamlit page modules (WIP)
+  corn_stats/        # Main package
+    assets/          # Logo utilities
+    config.py        # Configuration and constants
+    data/            # Data loading and parsing
+    features/        # Advanced metrics calculation
+    ui/              # Streamlit UI components (glossary)
+    viz/             # Visualization helpers
+  main.py            # Streamlit main page
+  pages/
+    1_Team_Dash.py   # Team dashboard with charts
 pyproject.toml       # Project metadata and dependencies
 ```
 
@@ -60,7 +72,7 @@ Once installed, `corn_stats` can be imported anywhere without tweaking `sys.path
   from corn_stats.data import get_league_table
 
   df = get_league_table(TABLE_URL)
-  df.to_csv(TABLES_DATA_PATH / "north_liga_df.csv", index=False)
+  df.to_csv(TABLES_DATA_PATH / "north_liga_df.csv", index=True)  # Position as index
   ```
 
 - **Parse a team page into a tidy DataFrame:**
@@ -78,15 +90,54 @@ Once installed, `corn_stats` can be imported anywhere without tweaking `sys.path
   metrics_df = calculate_all_advanced_stats(team_df)
   ```
 
-## Streamlit App (WIP)
+## Available Metrics
 
-When you're ready to wire up the UI:
+The package calculates a comprehensive set of basketball metrics:
+
+**Shooting Metrics:**
+- FG%, 2P%, 3P%, FT% — Basic shooting percentages
+- eFG% — Effective field goal percentage
+- TS% — True shooting percentage
+- Shot distribution (%Pts_2P, %Pts_3P, %Pts_FT)
+- Shot rates (2Pr, 3Pr, FTr)
+
+**Possession-Based Metrics:**
+- Pace — Possessions per game
+- Offensive Rating — Points per 100 possessions
+- Defensive Rating — Points allowed per 100 possessions
+- Net Rating — Difference between offensive and defensive rating
+- TO% — Turnover percentage per 100 possessions
+
+**Rebounding:**
+- ORB%, DRB% — Offensive and defensive rebound percentages
+- Total rebounds (Tot and Avg variants)
+
+**Other Advanced Metrics:**
+- AST_Rate, STL_Rate, BLK_Rate, PFD_Rate — Rates per 100 possessions
+- ASS_TO_Ratio — Assist-to-turnover ratio
+- Win_% — Win percentage
+
+All metrics include validation to ensure data quality and prevent errors.
+
+## Streamlit App
+
+Run the dashboard:
 
 ```bash
 streamlit run src/main.py
 ```
 
-`src/main.py` and `src/pages/` can be populated incrementally, pulling ready-made helpers from the `corn_stats` package.
+The app includes:
+- **Main page** (`src/main.py`) — League standings, team details, and advanced metrics visualization
+- **Team Dashboard** (`src/pages/1_Team_Dash.py`) — Interactive charts: Pace, shooting strategies, rebounding profiles, and more
+
+Both pages include:
+- Data refresh controls
+- Interactive glossary in sidebar
+- CSV download functionality
+- Team logos on scatter plots
+
+All pages use shared components from `corn_stats` package for consistency.
 
 ## Notebooks
 
