@@ -20,3 +20,6 @@ wheels/
 *.png
 *.jpg
 *.jpeg
+
+# Notebooks (large exploratory notebooks)
+notebooks/draft.ipynb
