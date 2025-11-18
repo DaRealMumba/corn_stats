@@ -116,10 +116,14 @@ def effective_field_goal_percentage(df: pd.DataFrame, output_col: str = "eFG_%")
 
 
 def true_shooting_percentage(df: pd.DataFrame, output_col: str = "TS_%") -> pd.DataFrame:
+    """Calculate true shooting percentage.
+    
+    Formula: Scored / (2 * (FGA_Tot + 0.44 * FTA_Tot)) * 100
+    """
     df = df.copy()
-    _validate_columns(df, {"PTS_Tot", "FGA_Tot", "FTA_Tot"}, "true_shooting_percentage")
+    _validate_columns(df, {"Scored", "FGA_Tot", "FTA_Tot"}, "true_shooting_percentage")
     denominator = 2 * (df["FGA_Tot"] + 0.44 * df["FTA_Tot"])
-    df[output_col] = (_safe_divide(df["PTS_Tot"], denominator, default=0.0) * 100).round(2)
+    df[output_col] = (_safe_divide(df["Scored"], denominator, default=0.0) * 100).round(2)
     return df
 
 
@@ -161,11 +165,11 @@ def calculate_total_possessions(df: pd.DataFrame, output_col: str = "POSS_Tot") 
 def calculate_offensive_rating(df: pd.DataFrame, output_col: str = "Off_Rating") -> pd.DataFrame:
     """Calculate offensive rating (points per 100 possessions).
     
-    Formula: PTS_Tot / POSS_Tot * 100
+    Formula: Scored / POSS_Tot * 100
     """
     df = df.copy()
-    _validate_columns(df, {"PTS_Tot", "POSS_Tot"}, "calculate_offensive_rating")
-    df[output_col] = (_safe_divide(df["PTS_Tot"], df["POSS_Tot"], default=0.0) * 100).round(1)
+    _validate_columns(df, {"Scored", "POSS_Tot"}, "calculate_offensive_rating")
+    df[output_col] = (_safe_divide(df["Scored"], df["POSS_Tot"], default=0.0) * 100).round(1)
     return df
 
 
@@ -264,13 +268,13 @@ def win_percentage(df: pd.DataFrame, output_col: str = "Win_%") -> pd.DataFrame:
     return df
 
 
-def points_per_game_differential(df: pd.DataFrame, output_col: str = "Pts_Diff_PG") -> pd.DataFrame:
+def points_per_game_differential(df: pd.DataFrame, output_col: str = "Pts_Diff_Avg") -> pd.DataFrame:
     """Calculate point differential per game.
     
     Formula: (Scored - Allowed) / Games
     """
     df = df.copy()
-    _validate_columns(df, {"Scored", "Allowed", "Games"}, "points_per_game_differential")
+    _validate_columns(df, {"Scored", "Allowed", "Games"}, "average_points_differential")
     df[output_col] = (_safe_divide(df["Scored"] - df["Allowed"], df["Games"], default=0.0)).round(1)
     return df
 
@@ -281,7 +285,7 @@ def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     
     Requires basic stats columns:
     - Tot variants: FGM_Tot, FGA_Tot, 2PM_Tot, 2PA_Tot, 3PM_Tot, 3PA_Tot,
-      FTM_Tot, FTA_Tot, ORB_Tot, DRB_Tot, AST_Tot, TO_Tot, PTS_Tot
+      FTM_Tot, FTA_Tot, ORB_Tot, DRB_Tot, AST_Tot, TO_Tot, Scored,
     - League table: Scored, Allowed, Games, Wins, Losses
     """
     if df.empty:
