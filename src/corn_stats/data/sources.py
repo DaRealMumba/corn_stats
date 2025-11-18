@@ -84,6 +84,10 @@ def get_league_table(table_url: str) -> pd.DataFrame:
     selected["Team"] = team_data.apply(lambda x: x[0])
     selected["Abbr"] = team_data.apply(lambda x: x[1])
 
+    # Set position as index (1-based ranking instead of 0-11)
+    selected.index = range(1, len(selected) + 1)
+    selected.index.name = "Position"
+
     return selected
 
 
@@ -168,14 +172,15 @@ def parse_team_page_wide(team_url: str, league_table_df: pd.DataFrame | None = N
             float, (match.group(1), match.group(2), match.group(3), match.group(4))
         )
 
-    for metric in ("AST", "TO", "STL", "BLK", "PFD", "PTS"):
+    # Parse metrics (excluding PTS - it's already in league table as Scored/Pts_Scored_Avg)
+    for metric in ("AST", "TO", "STL", "BLK", "PFD"):
         if match := re.search(
             rf"{metric}\s+Prosečno\s+([\d.]+).*?Ukupno\s+([\d.]+)", text, re.DOTALL
         ):
             result[f"{metric}_Avg"], result[f"{metric}_Tot"] = map(float, (match.group(1), match.group(2)))
 
     # Validate that at least some basic stats were found
-    required_stats = ["FGA_Avg", "FGM_Avg", "PTS_Avg"]
+    required_stats = ["FGA_Avg", "FGM_Avg"]
     found_stats = [stat for stat in required_stats if stat in result]
     
     if not found_stats:
