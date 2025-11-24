@@ -10,16 +10,16 @@ wheels/
 .venv
 
 # Data
-*csv
+# *csv
 *pkl
 
 # VS Code
 .vscode
 
 # images
-*.png
-*.jpg
-*.jpeg
+# *.png
+# *.jpg
+# *.jpeg
 
 # Notebooks (large exploratory notebooks)
 notebooks/draft.ipynb
