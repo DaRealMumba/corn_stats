@@ -106,7 +106,7 @@ def assist_to_turnover_ratio(df: pd.DataFrame, output_col: str = "ASS_TO_Ratio")
     return df
 
 
-def effective_field_goal_percentage(df: pd.DataFrame, output_col: str = "eFG_%") -> pd.DataFrame:
+def effective_field_goal_percentage(df: pd.DataFrame, output_col: str = "eFG%") -> pd.DataFrame:
     df = df.copy()
     _validate_columns(df, {"FGM_Tot", "3PM_Tot", "FGA_Tot"}, "effective_field_goal_percentage")
     df[output_col] = (
@@ -115,7 +115,7 @@ def effective_field_goal_percentage(df: pd.DataFrame, output_col: str = "eFG_%")
     return df
 
 
-def true_shooting_percentage(df: pd.DataFrame, output_col: str = "TS_%") -> pd.DataFrame:
+def true_shooting_percentage(df: pd.DataFrame, output_col: str = "TS%") -> pd.DataFrame:
     """Calculate true shooting percentage.
     
     Formula: Scored / (2 * (FGA_Tot + 0.44 * FTA_Tot)) * 100
@@ -127,7 +127,7 @@ def true_shooting_percentage(df: pd.DataFrame, output_col: str = "TS_%") -> pd.D
     return df
 
 
-def offensive_rebound_percentage(df: pd.DataFrame, output_col: str = "ORB_%") -> pd.DataFrame:
+def offensive_rebound_percentage(df: pd.DataFrame, output_col: str = "ORB%") -> pd.DataFrame:
     """
     Calculate offensive rebound percentage. 
     League average defensive rebound percentage is used to calculate the denominator.
@@ -142,13 +142,13 @@ def offensive_rebound_percentage(df: pd.DataFrame, output_col: str = "ORB_%") ->
     return df
 
 
-def defensive_rebound_percentage(df: pd.DataFrame, output_col: str = "DRB_%") -> pd.DataFrame:
+def defensive_rebound_percentage(df: pd.DataFrame, output_col: str = "DRB%") -> pd.DataFrame:
     """
     Calculate defensive rebound percentage.
     Formula: DRB_Tot / (DRB_Tot + ORB_League_Avg * Games) * 100
     """
     df = df.copy()
-    _validate_columns(df, {"ORB_%", "DRB_Tot", "Games"}, "defensive_rebound_percentage")
+    _validate_columns(df, {"ORB%", "DRB_Tot", "Games"}, "defensive_rebound_percentage")
     league_avg_orb = sum(df["ORB_Tot"]) / sum(df["Games"])
     denominator = df["DRB_Tot"] + league_avg_orb * df["Games"]
     df[output_col] = (_safe_divide(df["DRB_Tot"], denominator, default=0.0) * 100).round(2)
@@ -184,7 +184,7 @@ def calculate_defensive_rating(df: pd.DataFrame, output_col: str = "Def_Rating")
     return df
 
 
-def turnover_percentage(df: pd.DataFrame, output_col: str = "TO_%") -> pd.DataFrame:
+def turnover_percentage(df: pd.DataFrame, output_col: str = "TO%") -> pd.DataFrame:
     """Calculate turnover percentage (turnovers per 100 possessions).
     
     Formula: TO_Tot / POSS_Tot * 100
@@ -246,18 +246,18 @@ def block_rate(df: pd.DataFrame, output_col: str = "BLK_Rate") -> pd.DataFrame:
     return df
 
 
-def foul_rate(df: pd.DataFrame, output_col: str = "PFD_Rate") -> pd.DataFrame:
-    """Calculate personal foul rate (fouls per 100 possessions).
+def foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFD_Rate") -> pd.DataFrame:
+    """Calculate personal foul drawn rate (personal fouls drawn per 100 possessions).
     
     Formula: PFD_Tot / POSS_Tot * 100
     """
     df = df.copy()
-    _validate_columns(df, {"PFD_Tot", "POSS_Tot"}, "foul_rate")
+    _validate_columns(df, {"PFD_Tot", "POSS_Tot"}, "foul_drawn_rate")
     df[output_col] = (_safe_divide(df["PFD_Tot"], df["POSS_Tot"], default=0.0) * 100).round(2)
     return df
 
 
-def win_percentage(df: pd.DataFrame, output_col: str = "Win_%") -> pd.DataFrame:
+def win_percentage(df: pd.DataFrame, output_col: str = "Win%") -> pd.DataFrame:
     """Calculate win percentage.
     
     Formula: Wins / Games * 100
@@ -317,7 +317,7 @@ def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = assist_rate(df)
     df = steal_rate(df)
     df = block_rate(df)
-    df = foul_rate(df)
+    df = foul_drawn_rate(df)
     df = win_percentage(df)
     df = points_per_game_differential(df)
 
