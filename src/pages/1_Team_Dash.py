@@ -144,7 +144,7 @@ def main() -> None:
         y="FG%",
         logo_size_factor=0.15,
         title="Points vs Field Goal Percentage",
-        hover_data=["Team", "FGM_Tot", "FGA_Tot", "eFG_%", "TS_%"],
+        hover_data=["Team", "FGM_Tot", "FGA_Tot", "eFG%", "TS%"],
     )
     st.plotly_chart(fig_points_fg, width="stretch")
 
@@ -205,8 +205,8 @@ def main() -> None:
     st.subheader("6. Rebounding Profile: Offensive vs Defensive Rebound %")
     fig_rebounds = scatter_with_logos_plotly(
         team_stats,
-        x="ORB_%",
-        y="DRB_%",
+        x="ORB%",
+        y="DRB%",
         logo_size_factor=0.15,
         title="Rebounding Profile: Offensive vs Defensive Rebound %",
         hover_data=["Team", "ORB_Tot", "DRB_Tot", "TRB_Tot", "TRB_Avg"],
