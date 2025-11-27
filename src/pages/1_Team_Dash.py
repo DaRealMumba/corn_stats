@@ -224,7 +224,7 @@ def main() -> None:
         color="Net_Rating",
         title="Teams by Net Rating",
         color_continuous_scale="RdYlGn",
-        hover_data=["Off_Rating", "Def_Rating", "Win_%"],
+        hover_data=["Off_Rating", "Def_Rating", "Win%"],
     )
     fig_net_rating.update_layout(height=500, yaxis={"categoryorder": "total ascending"})
     st.plotly_chart(fig_net_rating, width="stretch")
