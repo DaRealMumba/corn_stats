@@ -2,6 +2,12 @@
 
 An analytics dashboard for the amateur Serbian basketball league North Division. The repository contains scraping helpers, data processing utilities, advanced team metrics, and a multi-page Streamlit dashboard.
 
+## Live Demo
+
+The latest deployed version of the dashboard is available here:
+
+`https://cornstats.up.railway.app`
+
 ## Features
 
 - **Data ingestion** — `corn_stats.data` pulls the league table and team pages straight from [cornliga.com](https://cornliga.com).

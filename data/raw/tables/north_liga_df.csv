@@ -1,13 +1,13 @@
-Position,Team,Points,Wins,Losses,Scored,Allowed,Games,Points_Diff,Pts_Scored_Avg,Pts_Allowed_Avg,Abbr
-1,KK Šljakeri,12,6,0,359,285,6,74,59.8,47.5,KKŠ
-2,Belgrade Bulls,11,5,1,411,318,6,93,68.5,53.0,BEL
-3,Ravens Belgrade,11,4,3,391,368,7,23,55.9,52.6,RVB
-4,KK Savski,11,4,3,435,398,7,37,62.1,56.9,SAV
-5,Fireflies,10,4,2,374,354,6,20,62.3,59.0,FRS
-6,Pistacci,9,4,1,393,297,5,96,78.6,59.4,PST
-7,Dva Telefona,9,4,1,365,316,5,49,73.0,63.2,DVA
-8,KK Tufe,6,1,4,299,339,5,-40,59.8,67.8,TUF
-9,Phantom Troupe,6,1,4,281,327,5,-46,56.2,65.4,PHT
-10,KK Tap 011,6,0,6,287,378,6,-91,47.8,63.0,KT0
-11,Koza Nostra,5,0,5,293,406,5,-113,58.6,81.2,KOZ
-12,KK Bricklayers,3,0,3,137,239,3,-102,45.7,79.7,BRC
+Team,Points,Wins,Losses,Scored,Allowed,Games,Points_Diff,Pts_Scored_Avg,Pts_Allowed_Avg,Abbr
+KK Šljakeri,12,6,0,359,285,6,74,59.8,47.5,KKŠ
+Belgrade Bulls,11,5,1,411,318,6,93,68.5,53.0,BEL
+Ravens Belgrade,11,4,3,391,368,7,23,55.9,52.6,RVB
+KK Savski,11,4,3,435,398,7,37,62.1,56.9,SAV
+Fireflies,10,4,2,374,354,6,20,62.3,59.0,FRS
+Pistacci,9,4,1,393,297,5,96,78.6,59.4,PST
+Dva Telefona,9,4,1,365,316,5,49,73.0,63.2,DVA
+KK Tufe,6,1,4,299,339,5,-40,59.8,67.8,TUF
+Phantom Troupe,6,1,4,281,327,5,-46,56.2,65.4,PHT
+KK Tap 011,6,0,6,287,378,6,-91,47.8,63.0,KT0
+Koza Nostra,5,0,5,293,406,5,-113,58.6,81.2,KOZ
+KK Bricklayers,3,0,3,137,239,3,-102,45.7,79.7,BRC
