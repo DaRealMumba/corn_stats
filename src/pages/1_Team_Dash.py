@@ -11,7 +11,8 @@ from corn_stats.config import (
     TABLES_DATA_PATH,
     TABLE_URL,
     TEAMS,
-    TEAMS_DATA_PATH,
+    RAW_TEAMS_DATA_PATH,
+    PROCESSED_TEAMS_DATA_PATH,
     TEAMS_URL,
     TEAM_STATS_COLUMN_ORDER,
 )
@@ -21,8 +22,8 @@ from corn_stats.ui import render_glossary
 from corn_stats.viz import scatter_with_logos_plotly
 
 LEAGUE_TABLE_FILE = TABLES_DATA_PATH / "north_liga_df.csv"
-RAW_TEAM_STATS_FILE = TEAMS_DATA_PATH / "raw_teams_stats.csv"
-ADV_TEAM_STATS_FILE = TEAMS_DATA_PATH / "all_teams_stats.csv"
+RAW_TEAM_STATS_FILE = RAW_TEAMS_DATA_PATH / "raw_teams_stats.csv"
+ADV_TEAM_STATS_FILE = PROCESSED_TEAMS_DATA_PATH / "all_teams_stats.csv"
 
 
 def _ensure_parent(path: Path) -> None:
