@@ -178,7 +178,7 @@ PLAYER_STATS_COLUMN_ORDER = [
     "TS%",
     "eFG%",
     "Shot_Usage",
-    "Usage_Share",
+    # "Usage_Share",
     "%Pts_2P",
     "%Pts_3P",
     "%Pts_FT",
