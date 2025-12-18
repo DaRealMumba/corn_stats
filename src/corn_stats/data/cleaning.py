@@ -215,7 +215,7 @@ def merge_duplicate_players(
         age_value = duplicate_rows[age_col].dropna().iloc[0] if duplicate_rows[age_col].notna().any() else None
     else:
         age_rows = duplicate_rows[duplicate_rows[player_col] == age_source_name]
-        age_value = age_rows[age_col].iloc[0] if not age_rows.empty else None
+        age_value = age_rows[age_col].iloc[0] if not age_rows.empty and age_rows[age_col].notna().any() else None
     merged_data[age_col] = age_value
     
     # Устанавливаем имя игрока
