@@ -17,7 +17,7 @@ from corn_stats.config import (
     TEAM_STATS_COLUMN_ORDER,
 )
 from corn_stats.data import get_league_table, parse_team_page_wide
-from corn_stats.features import calculate_all_advanced_stats
+from corn_stats.features import calculate_team_advanced_stats
 from corn_stats.ui import render_glossary
 from corn_stats.viz import scatter_with_logos_plotly
 
@@ -69,7 +69,7 @@ def load_team_stats(
     raw_df = pd.concat(frames, ignore_index=True)
     raw_df.to_csv(RAW_TEAM_STATS_FILE, index=False)
 
-    advanced_df = calculate_all_advanced_stats(
+    advanced_df = calculate_team_advanced_stats(
         league_df.merge(
             raw_df.drop(columns=["Team"]),
             on="Abbr",
