@@ -358,7 +358,7 @@ def calculate_team_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     - League table: Scored, Allowed, Games, Wins, Losses
     """
     if df.empty:
-        raise ValueError("calculate_all_advanced_stats received empty DataFrame")
+        raise ValueError("calculate_team_advanced_stats received empty DataFrame")
     
     df = df.copy()
 
