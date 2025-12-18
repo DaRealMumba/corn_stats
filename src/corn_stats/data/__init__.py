@@ -1,4 +1,4 @@
-from .cleaning import clean_team_name, normalize_string, reorder_player_stats_columns, reorder_team_stats_columns
+from .cleaning import clean_team_name, normalize_string, reorder_player_stats_columns, reorder_team_stats_columns, merge_duplicate_players
 from .sources import get_league_table, parse_team_page_wide, get_team_stats_for_all_players, get_team_roster_urls, get_player_stats
 
 __all__ = [
@@ -6,6 +6,7 @@ __all__ = [
     "normalize_string",
     "reorder_player_stats_columns",
     "reorder_team_stats_columns",
+    "merge_duplicate_players",
     "get_league_table",
     "parse_team_page_wide",
     "get_team_roster_urls",
