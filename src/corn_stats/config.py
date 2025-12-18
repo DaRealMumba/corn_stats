@@ -119,3 +119,75 @@ TEAM_STATS_COLUMN_ORDER = [
     "ASS_TO_Ratio",
 ]
 
+# Column order for player stats DataFrame
+PLAYER_STATS_COLUMN_ORDER = [
+    # Basic info
+    "Player",
+    "Age",
+    "Games",
+    # Points & Efficiency
+    "Pts_Avg",
+    "Pts_Tot",
+    "Eff_Avg",
+    "Eff_Tot",
+    # Field Goals
+    "FGM_Avg",
+    "FGA_Avg",
+    "FG%",
+    "FGM_Tot",
+    "FGA_Tot",
+    # 2-Pointers
+    "2PM_Avg",
+    "2PA_Avg",
+    "2P%",
+    "2PM_Tot",
+    "2PA_Tot",
+    # 3-Pointers
+    "3PM_Avg",
+    "3PA_Avg",
+    "3P%",
+    "3PM_Tot",
+    "3PA_Tot",
+    # Free Throws
+    "FTM_Avg",
+    "FTA_Avg",
+    "FT%",
+    "FTM_Tot",
+    "FTA_Tot",
+    # Rebounds
+    "TRB_Avg",
+    "TRB_Tot",
+    "ORB_Avg",
+    "ORB_Tot",
+    "DRB_Avg",
+    "DRB_Tot",
+    # Playmaking
+    "AST_Avg",
+    "AST_Tot",
+    "TO_Avg",
+    "TO_Tot",
+    # Defense
+    "STL_Avg",
+    "STL_Tot",
+    "BLK_Avg",
+    "BLK_Tot",
+    # Fouls Drawn
+    "PFD_Avg",
+    "PFD_Tot",
+    # Advanced metrics
+    "TS%",
+    "eFG%",
+    "Shot_Usage",
+    # "Usage_Share",
+    "%Pts_2P",
+    "%Pts_3P",
+    "%Pts_FT",
+    "2Pr",
+    "3Pr",
+    "FTr",
+    "ASS_TO_Ratio",
+    "AST_Share",
+    "ORBr",
+    "PFDr",
+]
+

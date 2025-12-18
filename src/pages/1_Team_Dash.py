@@ -14,10 +14,9 @@ from corn_stats.config import (
     RAW_TEAMS_DATA_PATH,
     PROCESSED_TEAMS_DATA_PATH,
     TEAMS_URL,
-    TEAM_STATS_COLUMN_ORDER,
 )
-from corn_stats.data import get_league_table, parse_team_page_wide
-from corn_stats.features import calculate_all_advanced_stats
+from corn_stats.data import get_league_table, parse_team_page_wide, reorder_team_stats_columns
+from corn_stats.features import calculate_team_advanced_stats
 from corn_stats.ui import render_glossary
 from corn_stats.viz import scatter_with_logos_plotly
 
@@ -28,14 +27,6 @@ ADV_TEAM_STATS_FILE = PROCESSED_TEAMS_DATA_PATH / "all_teams_stats.csv"
 
 def _ensure_parent(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
-
-def reorder_team_stats_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Reorder columns in team stats DataFrame according to TEAM_STATS_COLUMN_ORDER."""
-    df = df.copy()
-    ordered_cols = [col for col in TEAM_STATS_COLUMN_ORDER if col in df.columns]
-    remaining_cols = [col for col in df.columns if col not in TEAM_STATS_COLUMN_ORDER]
-    return df[ordered_cols + remaining_cols]
 
 
 @st.cache_data(show_spinner=False)
@@ -69,7 +60,7 @@ def load_team_stats(
     raw_df = pd.concat(frames, ignore_index=True)
     raw_df.to_csv(RAW_TEAM_STATS_FILE, index=False)
 
-    advanced_df = calculate_all_advanced_stats(
+    advanced_df = calculate_team_advanced_stats(
         league_df.merge(
             raw_df.drop(columns=["Team"]),
             on="Abbr",

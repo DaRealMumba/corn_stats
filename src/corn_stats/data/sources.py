@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Iterable
+from typing import Dict, Iterable, List
 
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-from corn_stats.data.cleaning import clean_team_name, normalize_string
+from corn_stats.data.cleaning import clean_team_name, normalize_string, normalize_player_stats_columns, merge_duplicate_players
 
 
 def get_league_table(table_url: str) -> pd.DataFrame:
@@ -194,3 +194,243 @@ def parse_team_page_wide(team_url: str, league_table_df: pd.DataFrame | None = N
     other_cols = [c for c in dataframe.columns if c not in priority_cols]
     return dataframe[priority_cols + other_cols]
 
+
+def get_team_roster_urls(team_url: str) -> List[Dict[str, str | None]]:
+    html = requests.get(team_url, timeout=20).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    roster = []
+
+    player_cards = soup.select("a[href*='/players/']")
+
+    for card in player_cards:
+        lines = [line.strip() for line in card.get_text("\n", strip=True).split("\n") if line.strip()]
+
+        birth_year = None
+        name = None
+
+        # Try find birth year
+        for line in lines:
+            if re.fullmatch(r"\d{4}", line):
+                birth_year = line
+                break
+
+        # Name = first non-numeric, non-statistic string
+        for line in lines:
+            if not re.fullmatch(r"\d{4}", line) and not re.fullmatch(r"[0-9\.\-]+", line):
+                # avoid PTS, REB, AST, etc.
+                if line.upper() not in {"PTS", "REB", "AST", "STL", "BLK", "+/-", "3PTM", "OU:"}:
+                    name = line
+                    break
+
+        if name:
+            roster.append({
+                "name": name,
+                "birth_year": birth_year,
+                "url": "https://cornliga.com" + card["href"],
+            })
+
+    return roster
+
+
+def get_player_stats(url: str, birth_year: str | None) -> pd.DataFrame:
+    """
+    Parse player statistics from Cornliga player page.
+    
+    Page structure uses blocks:
+      - EFF, FG, 2P, 3P, FT, AST, TO, STL, BLK, PFD, PTS — simple pattern:
+            <HEADER>
+            Prosečno → numbers
+            Ukupno   → numbers
+      - REB O/D — unique block where ORB/DRB are split into two vertical stacks,
+        and total REB (average and total) are in a separate gradient div.
+    
+    extract_after() is used for "simple blocks" and extracts N numbers in a row,
+    stopping when it encounters one of STOP_WORDS.
+    
+    Args:
+        url: Player page URL
+        birth_year: Birth year for age calculation (can be None if not available)
+    """
+    html = requests.get(url, timeout=20).text
+    soup = BeautifulSoup(html, "html.parser")
+
+    # Headers to stop extract_after
+    STOP_WORDS = {
+        "EFF", "FG", "2P", "3P", "FT", "REB O/D",
+        "AST", "TO", "STL", "BLK", "PFD", "PTS"
+    }
+
+    def safe_float(text: str) -> float | None:
+        """Convert text to float, handling European format and whitespace."""
+        try:
+            return float(text.strip().replace(",", "."))
+        except (ValueError, AttributeError):
+            return None
+
+    def extract_after(header_node, count: int) -> List[float | None]:
+        """
+        Extract `count` numbers after header.
+        
+        Logic:
+        - iterate via .find_next()
+        - skip text and non-numeric elements
+        - stop if next header (STOP_WORDS) is encountered
+        - replace ',' with '.' and remove '%' before float conversion
+        - pad list with None if fewer numbers than required
+        """
+        values = []
+        el = header_node.find_next()
+
+        while el and len(values) < count:
+            txt = (
+                el.get_text(strip=True)
+                  .replace(",", ".")
+                  .replace("%", "")
+            )
+
+            # If next header encountered — stop collecting
+            if txt in STOP_WORDS:
+                break
+
+            # Try to convert to number
+            try:
+                values.append(float(txt))
+            except ValueError:
+                pass  # Skip text, div, span, etc.
+
+            el = el.find_next()
+
+        # If fewer numbers than needed — pad with None
+        values += [None] * (count - len(values))
+        return values
+
+    stats: Dict[str, float | None] = {}
+
+    # ---------- Simple blocks (all except REB O/D) ----------
+    blocks = {
+        "EFF": ("eff_pg", "eff_total"),
+        "FG": ("fg_FGA_pg", "fg_FGM_pg", "fg_FGA_total", "fg_FGM_total", "fg_pct"),
+        "2P": ("2p_A_pg", "2p_M_pg", "2p_A_total", "2p_M_total", "2p_pct"),
+        "3P": ("3p_A_pg", "3p_M_pg", "3p_A_total", "3p_M_total", "3p_pct"),
+        "FT": ("ft_A_pg", "ft_M_pg", "ft_A_total", "ft_M_total", "ft_pct"),
+        "AST": ("ast_pg", "ast_total"),
+        "TO":  ("to_pg", "to_total"),
+        "STL": ("stl_pg", "stl_total"),
+        "BLK": ("blk_pg", "blk_total"),
+        "PFD": ("pfd_pg", "pfd_total"),
+        "PTS": ("pts_pg", "pts_total"),
+    }
+
+    # Apply unified logic to all blocks
+    for header, keys in blocks.items():
+        h = soup.find(string=header)
+        if h is not None:
+            extracted = extract_after(h, len(keys))
+            for k, v in zip(keys, extracted):
+                stats[k] = v
+
+    # ---------- REB block (special markup) ----------
+    reb_header = soup.find(string="REB O/D")
+    if reb_header is not None:
+        reb_container = reb_header.find_parent("div")
+        if reb_container is not None:
+            # --- Prosečno block (ORB_pg, DRB_pg) ---
+            proc = reb_container.find("span", string="Prosečno")
+            if proc is not None:
+                proc = proc.find_parent("div")
+                if proc is not None:
+                    spans = proc.find_all("span")
+                    # spans: ["Prosečno", "ORB", "0.7", "DRB", "4.2"]
+                    if len(spans) >= 5:
+                        stats["orb_pg"] = safe_float(spans[2].text)
+                        stats["drb_pg"] = safe_float(spans[4].text)
+
+            # --- Ukupno block (ORB_total, DRB_total) ---
+            ukup = reb_container.find("span", string="Ukupno")
+            if ukup is not None:
+                ukup = ukup.find_parent("div")
+                if ukup is not None:
+                    spans = ukup.find_all("span")
+                    # spans: ["Ukupno", "ORB", "4", "DRB", "25"]
+                    if len(spans) >= 5:
+                        stats["orb_total"] = safe_float(spans[2].text)
+                        stats["drb_total"] = safe_float(spans[4].text)
+
+            # --- Gradient block with total REB ---
+            # div class="bg-gradient" → inside two span: [REB_pg, REB_total]
+            gradient = reb_container.find("div", class_="bg-gradient")
+            if gradient is not None:
+                reb_spans = gradient.find_all("span")
+                if len(reb_spans) >= 2:
+                    stats["reb_pg"] = safe_float(reb_spans[0].text)
+                    stats["reb_total"] = safe_float(reb_spans[1].text)
+
+    # Calculate Games from pts_total / pts_pg (if pts_pg > 0)
+    # Round to nearest integer since games must be whole numbers
+    # (averages are rounded, so division can give fractional results)
+    if "pts_total" in stats and "pts_pg" in stats:
+        if stats["pts_pg"] is not None and stats["pts_total"] is not None:
+            if stats["pts_pg"] > 0:
+                games_calculated = stats["pts_total"] / stats["pts_pg"]
+                stats["games"] = int(round(games_calculated))
+            else:
+                stats["games"] = 0
+        else:
+            stats["games"] = None
+    else:
+        stats["games"] = None
+
+    # Calculate age from birth_year if provided
+    if birth_year is not None:
+        try:
+            stats["age"] = pd.to_datetime("now").year - int(birth_year)
+        except (ValueError, TypeError):
+            stats["age"] = None
+    else:
+        stats["age"] = None
+
+    return pd.DataFrame([stats])
+
+
+def get_team_stats_for_all_players(team_url: str) -> pd.DataFrame:
+    """
+    Collect statistics for all players in a CornLiga team.
+    
+    1) Load roster — name, birth year, player link.
+    2) For each player, parse their individual statistics.
+    3) Combine everything into one DataFrame.
+    4) Normalize column names.
+    5) Filter out players who haven't played any games (Games = 0 or None).
+    
+    Returns:
+        DataFrame with player statistics, excluding players with no games played.
+    """
+    roster = get_team_roster_urls(team_url)
+    all_stats = []
+    
+    for player in roster:
+        player_url = player["url"]
+        
+        try:
+            df = get_player_stats(player_url, birth_year=player["birth_year"])
+            df["name"] = player["name"]
+            all_stats.append(df)
+        except Exception as e:
+            # Log error but continue processing other players
+            print(f"Error processing {player['name']}: {e}")
+        
+    if all_stats:
+        players_df = pd.concat(all_stats, ignore_index=True)
+        players_df = normalize_player_stats_columns(players_df)
+        
+        # Filter out players who haven't played any games
+        # (Games = 0, None, or missing means no games played)
+        if "Games" in players_df.columns:
+            players_df = players_df[
+                (players_df["Games"].notna()) & (players_df["Games"] > 0)
+            ].copy()
+        
+        return players_df
+    else:
+        return pd.DataFrame()

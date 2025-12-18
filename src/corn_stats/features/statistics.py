@@ -51,12 +51,25 @@ def calculate_shooting_percentage(
     return df
 
 
-def calculate_shot_distribution(df: pd.DataFrame, multiplier: float = 100.0, decimals: int = 1) -> pd.DataFrame:
+def calculate_shot_distribution(
+    df: pd.DataFrame,
+    multiplier: float = 100.0,
+    decimals: int = 1,
+    scored_col: str = "Scored",
+) -> pd.DataFrame:
+    """Calculate shot distribution (% of points from 2P, 3P, FT).
+    
+    Args:
+        df: DataFrame with shooting statistics
+        multiplier: Multiplier for percentage (default 100.0)
+        decimals: Number of decimal places (default 1)
+        scored_col: Column name for total points (default "Scored", use "Pts_Tot" for players)
+    """
     df = df.copy()
-    _validate_columns(df, {"2PM_Tot", "3PM_Tot", "FTM_Tot", "Scored"}, "calculate_shot_distribution")
-    df["%Pts_2P"] = (_safe_divide(2 * df["2PM_Tot"], df["Scored"], default=0.0) * multiplier).round(decimals)   
-    df["%Pts_3P"] = (_safe_divide(3 * df["3PM_Tot"], df["Scored"], default=0.0) * multiplier).round(decimals)
-    df["%Pts_FT"] = (_safe_divide(df["FTM_Tot"], df["Scored"], default=0.0) * multiplier).round(decimals)
+    _validate_columns(df, {"2PM_Tot", "3PM_Tot", "FTM_Tot", scored_col}, "calculate_shot_distribution")
+    df["%Pts_2P"] = (_safe_divide(2 * df["2PM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)   
+    df["%Pts_3P"] = (_safe_divide(3 * df["3PM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)
+    df["%Pts_FT"] = (_safe_divide(df["FTM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)
     return df
 
 
@@ -115,15 +128,24 @@ def effective_field_goal_percentage(df: pd.DataFrame, output_col: str = "eFG%") 
     return df
 
 
-def true_shooting_percentage(df: pd.DataFrame, output_col: str = "TS%") -> pd.DataFrame:
+def true_shooting_percentage(
+    df: pd.DataFrame,
+    output_col: str = "TS%",
+    scored_col: str = "Scored",
+) -> pd.DataFrame:
     """Calculate true shooting percentage.
     
     Formula: Scored / (2 * (FGA_Tot + 0.44 * FTA_Tot)) * 100
+    
+    Args:
+        df: DataFrame with shooting statistics
+        output_col: Name of output column (default "TS%")
+        scored_col: Column name for total points (default "Scored", use "Pts_Tot" for players)
     """
     df = df.copy()
-    _validate_columns(df, {"Scored", "FGA_Tot", "FTA_Tot"}, "true_shooting_percentage")
+    _validate_columns(df, {scored_col, "FGA_Tot", "FTA_Tot"}, "true_shooting_percentage")
     denominator = 2 * (df["FGA_Tot"] + 0.44 * df["FTA_Tot"])
-    df[output_col] = (_safe_divide(df["Scored"], denominator, default=0.0) * 100).round(2)
+    df[output_col] = (_safe_divide(df[scored_col], denominator, default=0.0) * 100).round(2)
     return df
 
 
@@ -246,14 +268,57 @@ def block_rate(df: pd.DataFrame, output_col: str = "BLK_Rate") -> pd.DataFrame:
     return df
 
 
-def foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFD_Rate") -> pd.DataFrame:
-    """Calculate personal foul drawn rate (personal fouls drawn per 100 possessions).
+def team_foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFD_Rate") -> pd.DataFrame:
+    """Calculate team foul drawn rate (team fouls drawn per 100 possessions).
     
     Formula: PFD_Tot / POSS_Tot * 100
     """
     df = df.copy()
-    _validate_columns(df, {"PFD_Tot", "POSS_Tot"}, "foul_drawn_rate")
+    _validate_columns(df, {"PFD_Tot", "POSS_Tot"}, "team_foul_drawn_rate")
     df[output_col] = (_safe_divide(df["PFD_Tot"], df["POSS_Tot"], default=0.0) * 100).round(2)
+    return df
+
+
+def assist_share(df: pd.DataFrame, output_col: str = "AST_Share") -> pd.DataFrame:
+    """Calculate assist share (player's assists as % of team total).
+    
+    Formula: AST_Tot / sum(AST_Tot) * 100
+    
+    Note: This metric is typically used for player data within a single team.
+    """
+    df = df.copy()
+    _validate_columns(df, {"AST_Tot"}, "assist_share")
+    total_ast = df["AST_Tot"].sum()
+    if total_ast > 0:
+        df[output_col] = (df["AST_Tot"] / total_ast * 100).round(2)
+    else:
+        df[output_col] = pd.Series(0.0, index=df.index)
+    return df
+
+
+def offensive_rebound_rate(df: pd.DataFrame, output_col: str = "ORBr") -> pd.DataFrame:
+    """Calculate offensive rebound rate (ORB as % of total rebounds for a player).
+    
+    Formula: ORB_Tot / sum(ORB_Tot) * 100
+    """
+    df = df.copy()
+    _validate_columns(df, {"ORB_Tot"}, "offensive_rebound_rate")
+    total_orb = df["ORB_Tot"].sum()
+    if total_orb > 0:
+        df[output_col] = (df["ORB_Tot"] / total_orb * 100).round(2)
+    else:
+        df[output_col] = pd.Series(0.0, index=df.index)
+    return df
+
+
+def player_foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFDr") -> pd.DataFrame:
+    """Calculate player foul drawn rate for a player (fouls drawn per field goal attempt).
+    
+    Formula: PFD_Tot / FGA_Tot * 100
+    """
+    df = df.copy()
+    _validate_columns(df, {"PFD_Tot", "FGA_Tot"}, "player_foul_drawn_rate")
+    df[output_col] = (_safe_divide(df["PFD_Tot"], df["FGA_Tot"], default=0.0) * 100).round(2)
     return df
 
 
@@ -279,7 +344,21 @@ def points_per_game_differential(df: pd.DataFrame, output_col: str = "Pts_Diff_A
     return df
 
 
-def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
+def shot_usage(df: pd.DataFrame, output_col: str = "Shot_Usage") -> pd.DataFrame:
+    """Calculate shot usage for each player.
+    
+    Formula: FGA_Tot + 0.44 * FTA_Tot + TO_Tot
+    
+    This metric represents the number of possessions a player uses through
+    field goal attempts, free throw attempts (weighted), and turnovers.
+    """
+    df = df.copy()
+    _validate_columns(df, {"FGA_Tot", "FTA_Tot", "TO_Tot"}, "shot_usage")
+    df[output_col] = (df["FGA_Tot"] + 0.44 * df["FTA_Tot"] + df["TO_Tot"]).round(1)
+    return df
+
+
+def calculate_team_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate all advanced basketball statistics for teams.
     
@@ -289,7 +368,7 @@ def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     - League table: Scored, Allowed, Games, Wins, Losses
     """
     if df.empty:
-        raise ValueError("calculate_all_advanced_stats received empty DataFrame")
+        raise ValueError("calculate_team_advanced_stats received empty DataFrame")
     
     df = df.copy()
 
@@ -317,9 +396,36 @@ def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = assist_rate(df)
     df = steal_rate(df)
     df = block_rate(df)
-    df = foul_drawn_rate(df)
+    df = team_foul_drawn_rate(df)
     df = win_percentage(df)
     df = points_per_game_differential(df)
+
+    return df
+
+
+def calculate_players_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate all advanced basketball statistics for players.
+    
+    Requires basic stats columns:
+    - Tot variants: FGM_Tot, FGA_Tot, 2PM_Tot, 2PA_Tot, 3PM_Tot, 3PA_Tot,
+      FTM_Tot, FTA_Tot, ORB_Tot, DRB_Tot, AST_Tot, TO_Tot, Pts_Tot,
+      PFD_Tot
+    """
+    if df.empty:
+        raise ValueError("calculate_players_advanced_stats received empty DataFrame")
+    
+    df = df.copy()
+
+    df = shot_usage(df)
+    df = true_shooting_percentage(df, scored_col="Pts_Tot")
+    df = effective_field_goal_percentage(df)
+    df = calculate_shot_distribution(df, scored_col="Pts_Tot")
+    df = calculate_shot_rate(df)
+    df = assist_to_turnover_ratio(df)
+    df = assist_share(df)
+    df = offensive_rebound_rate(df)
+    df = player_foul_drawn_rate(df)
 
     return df
 
