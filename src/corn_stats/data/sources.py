@@ -261,6 +261,13 @@ def get_player_stats(url: str, birth_year: str | None) -> pd.DataFrame:
         "AST", "TO", "STL", "BLK", "PFD", "PTS"
     }
 
+    def safe_float(text: str) -> float | None:
+        """Convert text to float, handling European format and whitespace."""
+        try:
+            return float(text.strip().replace(",", "."))
+        except (ValueError, AttributeError):
+            return None
+
     def extract_after(header_node, count: int) -> List[float | None]:
         """
         Extract `count` numbers after header.
@@ -336,8 +343,8 @@ def get_player_stats(url: str, birth_year: str | None) -> pd.DataFrame:
                     spans = proc.find_all("span")
                     # spans: ["Prosečno", "ORB", "0.7", "DRB", "4.2"]
                     if len(spans) >= 5:
-                        stats["orb_pg"] = float(spans[2].text)
-                        stats["drb_pg"] = float(spans[4].text)
+                        stats["orb_pg"] = safe_float(spans[2].text)
+                        stats["drb_pg"] = safe_float(spans[4].text)
 
             # --- Ukupno block (ORB_total, DRB_total) ---
             ukup = reb_container.find("span", string="Ukupno")
@@ -347,8 +354,8 @@ def get_player_stats(url: str, birth_year: str | None) -> pd.DataFrame:
                     spans = ukup.find_all("span")
                     # spans: ["Ukupno", "ORB", "4", "DRB", "25"]
                     if len(spans) >= 5:
-                        stats["orb_total"] = float(spans[2].text)
-                        stats["drb_total"] = float(spans[4].text)
+                        stats["orb_total"] = safe_float(spans[2].text)
+                        stats["drb_total"] = safe_float(spans[4].text)
 
             # --- Gradient block with total REB ---
             # div class="bg-gradient" → inside two span: [REB_pg, REB_total]
@@ -356,8 +363,8 @@ def get_player_stats(url: str, birth_year: str | None) -> pd.DataFrame:
             if gradient is not None:
                 reb_spans = gradient.find_all("span")
                 if len(reb_spans) >= 2:
-                    stats["reb_pg"] = float(reb_spans[0].text)
-                    stats["reb_total"] = float(reb_spans[1].text)
+                    stats["reb_pg"] = safe_float(reb_spans[0].text)
+                    stats["reb_total"] = safe_float(reb_spans[1].text)
 
     # Calculate Games from pts_total / pts_pg (if pts_pg > 0)
     # Round to nearest integer since games must be whole numbers
