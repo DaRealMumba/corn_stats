@@ -292,7 +292,7 @@ def assist_share(df: pd.DataFrame, output_col: str = "AST_Share") -> pd.DataFram
     if total_ast > 0:
         df[output_col] = (df["AST_Tot"] / total_ast * 100).round(2)
     else:
-        df[output_col] = 0.0
+        df[output_col] = pd.Series(0.0, index=df.index)
     return df
 
 
@@ -307,7 +307,7 @@ def offensive_rebound_rate(df: pd.DataFrame, output_col: str = "ORBr") -> pd.Dat
     if total_orb > 0:
         df[output_col] = (df["ORB_Tot"] / total_orb * 100).round(2)
     else:
-        df[output_col] = 0.0
+        df[output_col] = pd.Series(0.0, index=df.index)
     return df
 
 
@@ -318,11 +318,7 @@ def player_foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFDr") -> pd.Dat
     """
     df = df.copy()
     _validate_columns(df, {"PFD_Tot", "FGA_Tot"}, "player_foul_drawn_rate")
-    total_fga = df["FGA_Tot"].sum()
-    if total_fga > 0:
-        df[output_col] = (_safe_divide(df["PFD_Tot"], df["FGA_Tot"], default=0.0) * 100).round(2)
-    else:
-        df[output_col] = 0.0
+    df[output_col] = (_safe_divide(df["PFD_Tot"], df["FGA_Tot"], default=0.0) * 100).round(2)
     return df
 
 
