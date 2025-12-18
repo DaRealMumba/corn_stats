@@ -51,12 +51,25 @@ def calculate_shooting_percentage(
     return df
 
 
-def calculate_shot_distribution(df: pd.DataFrame, multiplier: float = 100.0, decimals: int = 1) -> pd.DataFrame:
+def calculate_shot_distribution(
+    df: pd.DataFrame,
+    multiplier: float = 100.0,
+    decimals: int = 1,
+    scored_col: str = "Scored",
+) -> pd.DataFrame:
+    """Calculate shot distribution (% of points from 2P, 3P, FT).
+    
+    Args:
+        df: DataFrame with shooting statistics
+        multiplier: Multiplier for percentage (default 100.0)
+        decimals: Number of decimal places (default 1)
+        scored_col: Column name for total points (default "Scored", use "Pts_Tot" for players)
+    """
     df = df.copy()
-    _validate_columns(df, {"2PM_Tot", "3PM_Tot", "FTM_Tot", "Scored"}, "calculate_shot_distribution")
-    df["%Pts_2P"] = (_safe_divide(2 * df["2PM_Tot"], df["Scored"], default=0.0) * multiplier).round(decimals)   
-    df["%Pts_3P"] = (_safe_divide(3 * df["3PM_Tot"], df["Scored"], default=0.0) * multiplier).round(decimals)
-    df["%Pts_FT"] = (_safe_divide(df["FTM_Tot"], df["Scored"], default=0.0) * multiplier).round(decimals)
+    _validate_columns(df, {"2PM_Tot", "3PM_Tot", "FTM_Tot", scored_col}, "calculate_shot_distribution")
+    df["%Pts_2P"] = (_safe_divide(2 * df["2PM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)   
+    df["%Pts_3P"] = (_safe_divide(3 * df["3PM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)
+    df["%Pts_FT"] = (_safe_divide(df["FTM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)
     return df
 
 
@@ -115,15 +128,24 @@ def effective_field_goal_percentage(df: pd.DataFrame, output_col: str = "eFG%") 
     return df
 
 
-def true_shooting_percentage(df: pd.DataFrame, output_col: str = "TS%") -> pd.DataFrame:
+def true_shooting_percentage(
+    df: pd.DataFrame,
+    output_col: str = "TS%",
+    scored_col: str = "Scored",
+) -> pd.DataFrame:
     """Calculate true shooting percentage.
     
     Formula: Scored / (2 * (FGA_Tot + 0.44 * FTA_Tot)) * 100
+    
+    Args:
+        df: DataFrame with shooting statistics
+        output_col: Name of output column (default "TS%")
+        scored_col: Column name for total points (default "Scored", use "Pts_Tot" for players)
     """
     df = df.copy()
-    _validate_columns(df, {"Scored", "FGA_Tot", "FTA_Tot"}, "true_shooting_percentage")
+    _validate_columns(df, {scored_col, "FGA_Tot", "FTA_Tot"}, "true_shooting_percentage")
     denominator = 2 * (df["FGA_Tot"] + 0.44 * df["FTA_Tot"])
-    df[output_col] = (_safe_divide(df["Scored"], denominator, default=0.0) * 100).round(2)
+    df[output_col] = (_safe_divide(df[scored_col], denominator, default=0.0) * 100).round(2)
     return df
 
 
