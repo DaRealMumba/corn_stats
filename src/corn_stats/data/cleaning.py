@@ -6,7 +6,7 @@ from typing import Tuple
 
 import pandas as pd
 
-from corn_stats.config import TEAM_STATS_COLUMN_ORDER
+from corn_stats.config import PLAYER_STATS_COLUMN_ORDER, TEAM_STATS_COLUMN_ORDER
 
 
 PLAYER_RENAME_MAP: dict[str, str] = {
@@ -250,6 +250,23 @@ def reorder_team_stats_columns(df: pd.DataFrame) -> pd.DataFrame:
     
     # Get remaining columns (not in order list)
     remaining_cols = [col for col in df.columns if col not in TEAM_STATS_COLUMN_ORDER]
+    
+    # Reorder: ordered columns first, then remaining
+    return df[ordered_cols + remaining_cols]
+
+
+def reorder_player_stats_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Reorder columns in player stats DataFrame according to PLAYER_STATS_COLUMN_ORDER.
+    
+    Columns not in the order list will be appended at the end.
+    """
+    df = df.copy()
+    
+    # Get columns that exist in DataFrame
+    ordered_cols = [col for col in PLAYER_STATS_COLUMN_ORDER if col in df.columns]
+    
+    # Get remaining columns (not in order list)
+    remaining_cols = [col for col in df.columns if col not in PLAYER_STATS_COLUMN_ORDER]
     
     # Reorder: ordered columns first, then remaining
     return df[ordered_cols + remaining_cols]
