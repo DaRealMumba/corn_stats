@@ -23,3 +23,7 @@ wheels/
 
 # Notebooks (large exploratory notebooks)
 notebooks/draft.ipynb
+
+TODO.md
+.DS_Store
+.cursorrules
