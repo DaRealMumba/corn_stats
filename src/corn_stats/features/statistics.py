@@ -344,6 +344,20 @@ def points_per_game_differential(df: pd.DataFrame, output_col: str = "Pts_Diff_A
     return df
 
 
+def shot_usage(df: pd.DataFrame, output_col: str = "Shot_Usage") -> pd.DataFrame:
+    """Calculate shot usage for each player.
+    
+    Formula: FGA_Tot + 0.44 * FTA_Tot + TO_Tot
+    
+    This metric represents the number of possessions a player uses through
+    field goal attempts, free throw attempts (weighted), and turnovers.
+    """
+    df = df.copy()
+    _validate_columns(df, {"FGA_Tot", "FTA_Tot", "TO_Tot"}, "shot_usage")
+    df[output_col] = (df["FGA_Tot"] + 0.44 * df["FTA_Tot"] + df["TO_Tot"]).round(1)
+    return df
+
+
 def calculate_team_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate all advanced basketball statistics for teams.
@@ -385,6 +399,33 @@ def calculate_team_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = team_foul_drawn_rate(df)
     df = win_percentage(df)
     df = points_per_game_differential(df)
+
+    return df
+
+
+def calculate_players_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculate all advanced basketball statistics for players.
+    
+    Requires basic stats columns:
+    - Tot variants: FGM_Tot, FGA_Tot, 2PM_Tot, 2PA_Tot, 3PM_Tot, 3PA_Tot,
+      FTM_Tot, FTA_Tot, ORB_Tot, DRB_Tot, AST_Tot, TO_Tot, Pts_Tot,
+      PFD_Tot
+    """
+    if df.empty:
+        raise ValueError("calculate_players_advanced_stats received empty DataFrame")
+    
+    df = df.copy()
+
+    df = shot_usage(df)
+    df = true_shooting_percentage(df, scored_col="Pts_Tot")
+    df = effective_field_goal_percentage(df)
+    df = calculate_shot_distribution(df, scored_col="Pts_Tot")
+    df = calculate_shot_rate(df)
+    df = assist_to_turnover_ratio(df)
+    df = assist_share(df)
+    df = offensive_rebound_rate(df)
+    df = player_foul_drawn_rate(df)
 
     return df
 
