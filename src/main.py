@@ -14,9 +14,8 @@ from corn_stats.config import (
     RAW_TEAMS_DATA_PATH,
     PROCESSED_TEAMS_DATA_PATH,
     TEAMS_URL,
-    TEAM_STATS_COLUMN_ORDER,
 )
-from corn_stats.data import get_league_table, parse_team_page_wide
+from corn_stats.data import get_league_table, parse_team_page_wide, reorder_team_stats_columns
 from corn_stats.features import calculate_team_advanced_stats
 from corn_stats.ui import render_glossary
 from corn_stats.viz import scatter_with_logos_plotly
@@ -28,23 +27,6 @@ ADV_TEAM_STATS_FILE = PROCESSED_TEAMS_DATA_PATH / "all_teams_stats.csv"
 
 def _ensure_parent(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-
-
-def reorder_team_stats_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Reorder columns in team stats DataFrame according to TEAM_STATS_COLUMN_ORDER.
-    
-    Columns not in the order list will be appended at the end.
-    """
-    df = df.copy()
-    
-    # Get columns that exist in DataFrame
-    ordered_cols = [col for col in TEAM_STATS_COLUMN_ORDER if col in df.columns]
-    
-    # Get remaining columns (not in order list)
-    remaining_cols = [col for col in df.columns if col not in TEAM_STATS_COLUMN_ORDER]
-    
-    # Reorder: ordered columns first, then remaining
-    return df[ordered_cols + remaining_cols]
 
 
 @st.cache_data(show_spinner=False)

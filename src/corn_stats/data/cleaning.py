@@ -6,6 +6,8 @@ from typing import Tuple
 
 import pandas as pd
 
+from corn_stats.config import TEAM_STATS_COLUMN_ORDER
+
 
 PLAYER_RENAME_MAP: dict[str, str] = {
     "eff_pg": "Eff_Avg",
@@ -215,7 +217,7 @@ def merge_duplicate_players(
         age_value = duplicate_rows[age_col].dropna().iloc[0] if duplicate_rows[age_col].notna().any() else None
     else:
         age_rows = duplicate_rows[duplicate_rows[player_col] == age_source_name]
-        age_value = age_rows[age_col].iloc[0] if not age_rows.empty and age_rows[age_col].notna().any() else None
+        age_value = age_rows[age_col].dropna().iloc[0] if not age_rows.empty and age_rows[age_col].notna().any() else None
     merged_data[age_col] = age_value
     
     # Устанавливаем имя игрока
@@ -234,4 +236,21 @@ def merge_duplicate_players(
                 pass  # Оставляем как есть если не удалось преобразовать
     
     return pd.concat([df, merged_df], ignore_index=True)
+
+
+def reorder_team_stats_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Reorder columns in team stats DataFrame according to TEAM_STATS_COLUMN_ORDER.
+    
+    Columns not in the order list will be appended at the end.
+    """
+    df = df.copy()
+    
+    # Get columns that exist in DataFrame
+    ordered_cols = [col for col in TEAM_STATS_COLUMN_ORDER if col in df.columns]
+    
+    # Get remaining columns (not in order list)
+    remaining_cols = [col for col in df.columns if col not in TEAM_STATS_COLUMN_ORDER]
+    
+    # Reorder: ordered columns first, then remaining
+    return df[ordered_cols + remaining_cols]
 
