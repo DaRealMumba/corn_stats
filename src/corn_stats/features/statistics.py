@@ -268,14 +268,61 @@ def block_rate(df: pd.DataFrame, output_col: str = "BLK_Rate") -> pd.DataFrame:
     return df
 
 
-def foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFD_Rate") -> pd.DataFrame:
-    """Calculate personal foul drawn rate (personal fouls drawn per 100 possessions).
+def team_foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFD_Rate") -> pd.DataFrame:
+    """Calculate team foul drawn rate (team fouls drawn per 100 possessions).
     
     Formula: PFD_Tot / POSS_Tot * 100
     """
     df = df.copy()
-    _validate_columns(df, {"PFD_Tot", "POSS_Tot"}, "foul_drawn_rate")
+    _validate_columns(df, {"PFD_Tot", "POSS_Tot"}, "team_foul_drawn_rate")
     df[output_col] = (_safe_divide(df["PFD_Tot"], df["POSS_Tot"], default=0.0) * 100).round(2)
+    return df
+
+
+def assist_share(df: pd.DataFrame, output_col: str = "AST_Share") -> pd.DataFrame:
+    """Calculate assist share (player's assists as % of team total).
+    
+    Formula: AST_Tot / sum(AST_Tot) * 100
+    
+    Note: This metric is typically used for player data within a single team.
+    """
+    df = df.copy()
+    _validate_columns(df, {"AST_Tot"}, "assist_share")
+    total_ast = df["AST_Tot"].sum()
+    if total_ast > 0:
+        df[output_col] = (df["AST_Tot"] / total_ast * 100).round(2)
+    else:
+        df[output_col] = 0.0
+    return df
+
+
+def offensive_rebound_rate(df: pd.DataFrame, output_col: str = "ORBr") -> pd.DataFrame:
+    """Calculate offensive rebound rate (ORB as % of total rebounds for a player).
+    
+    Formula: ORB_Tot / sum(ORB_Tot) * 100
+    """
+    df = df.copy()
+    _validate_columns(df, {"ORB_Tot"}, "offensive_rebound_rate")
+    total_orb = df["ORB_Tot"].sum()
+    if total_orb > 0:
+        df[output_col] = (df["ORB_Tot"] / total_orb * 100).round(2)
+    else:
+        df[output_col] = 0.0
+    return df
+
+
+def player_foul_drawn_rate(df: pd.DataFrame, output_col: str = "PFDr") -> pd.DataFrame:
+    """Calculate player foul drawn rate for a player (fouls drawn per field goal attempt).
+    
+    Formula: PFD_Tot / FGA_Tot * 100
+    """
+    df = df.copy()
+    _validate_columns(df, {"PFD_Tot", "FGA_Tot"}, "player_foul_drawn_rate")
+    total_fga = df["FGA_Tot"].sum()
+    if total_fga > 0:
+        df[output_col] = (_safe_divide(df["PFD_Tot"], df["FGA_Tot"], default=0.0) * 100).round(2)
+    else:
+        df[output_col] = 0.0
     return df
 
 
@@ -301,7 +348,7 @@ def points_per_game_differential(df: pd.DataFrame, output_col: str = "Pts_Diff_A
     return df
 
 
-def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_team_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculate all advanced basketball statistics for teams.
     
@@ -339,7 +386,7 @@ def calculate_all_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = assist_rate(df)
     df = steal_rate(df)
     df = block_rate(df)
-    df = foul_drawn_rate(df)
+    df = team_foul_drawn_rate(df)
     df = win_percentage(df)
     df = points_per_game_differential(df)
 
