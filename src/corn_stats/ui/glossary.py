@@ -91,6 +91,10 @@ def render_glossary() -> None:
         "BLK_Rate": "Block rate - blocks per 100 possessions",
         "PFD_Rate": "Personal foul drawn rate - personal fouls drawn per 100 possessions",
         "ASS_TO_Ratio": "Assist-to-turnover ratio",
+        "AST_Share": "Assist share - percentage of team's assists used by a player: AST_Tot / sum(AST_Tot) * 100",
+        "ORBr": "Offensive rebound rate - percentage of team's offensive rebounds used by a player: ORB_Tot / sum(ORB_Tot) * 100",
+        "PFDr": "Personal foul drawn rate - percentage of team's personal fouls drawn used by a player: PFD_Tot / sum(PFD_Tot) * 100",
+        "Shot_Usage": "Shot usage - number of possessions a player uses through field goal attempts, free throw attempts (weighted), and turnovers: FGA_Tot + 0.44 * FTA_Tot + TO_Tot",
     }
     
     # Render metrics in the same order as TEAM_STATS_COLUMN_ORDER

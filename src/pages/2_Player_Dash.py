@@ -13,12 +13,12 @@ from corn_stats.config import (
 )
 from corn_stats.data import get_team_stats_for_all_players, reorder_player_stats_columns
 
-RAVENS_URL = f"{TEAMS_URL}/ravens-belgrade"
+RAVENS_URL = f"{TEAMS_URL}/ravens-belgrade/roster"
 from corn_stats.features import calculate_players_advanced_stats
 from corn_stats.ui import render_glossary
 
 RAW_PLAYERS_FILE = RAW_PLAYERS_DATA_PATH / "ravens_players_stats.csv"
-ADV_PLAYERS_FILE = PROCESSED_PLAYERS_DATA_PATH / "ravens_players_stats.csv"
+ADV_PLAYERS_FILE = PROCESSED_PLAYERS_DATA_PATH / "ravens_players_advanced_stats.csv"
 
 
 def _ensure_parent(path: Path) -> None:
@@ -58,6 +58,15 @@ def render_player_table(df: pd.DataFrame) -> None:
 def main() -> None:
     st.set_page_config(page_title="Corn Liga – Player Dashboard", layout="wide")
     st.title("Player Dashboard – Ravens Belgrade")
+    
+    # Description
+    st.markdown("""
+    This page contains statistics for the Ravens Belgrade players. In next releases will be added players statistics for other teams.
+    
+    Information about metrics is available in the glossary.
+    
+    Source: [cornliga.com](https://cornliga.com/seasons/2025-26/leagues/north-liga/teams/ravens-belgrade/roster)
+    """)
 
     with st.sidebar:
         st.header("Data controls")
@@ -88,7 +97,7 @@ def main() -> None:
         st.download_button(
             "Player stats (CSV)",
             data=player_stats.to_csv(index=False).encode("utf-8"),
-            file_name="ravens_player_stats.csv",
+            file_name="ravens_player_advanced_stats.csv",
             mime="text/csv",
         )
 
