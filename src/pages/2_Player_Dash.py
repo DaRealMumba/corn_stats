@@ -176,25 +176,24 @@ def render_3pr_vs_3p_percentage_chart(df: pd.DataFrame) -> None:
 
 
 def render_ftr_vs_ts_chart(df: pd.DataFrame) -> None:
-    """Scatter plot: Free Throw Rate vs True Shooting %."""
-    st.markdown("#### Free Throw Rate vs True Shooting %")
+    """Scatter plot: Free Throw Rate vs Free Throw Percentage %."""
+    st.markdown("#### Free Throw Rate vs Free Throw Percentage %")
     st.caption(
         "**FTr** — free throw attempts per 100 field goal attempts. "
-        "Dot size — offensive rebounds. "
+        "Dot size — FTr. "
         "High FTr indicates aggressive play near the basket."
     )
 
     avg_ftr = df["FTr"].mean()
-    avg_ts = df["TS%"].mean()
-
+    avg_ft_percentage = df["FT%"].mean()
     fig = px.scatter(
         df,
         x="FTr",
-        y="TS%",
-        size="ORB_Tot",
-        hover_data=["Player", "FTA_Tot", "FTM_Tot", "FT%", "ORB_Tot", "Usage_Share"],
-        labels={"FTr": "Free Throw Rate (%)", "TS%": "True Shooting %"},
-        color="TS%",
+        y="FT%",
+        size="FTr",
+        hover_data=["Player", "FTA_Tot", "FTM_Tot", "FT%", "Usage_Share"],
+        labels={"FTr": "Free Throw Rate (%)", "FT%": "Free Throw Percentage"},
+        color="FT%",
         color_continuous_scale="RdYlGn",
         text="Player",
     )
@@ -204,8 +203,8 @@ def render_ftr_vs_ts_chart(df: pd.DataFrame) -> None:
         marker=dict(line=dict(width=1, color="DarkSlateGrey")),
     )
     fig.add_hline(
-        y=avg_ts, line_dash="dash", line_color="gray",
-        annotation_text=f"Avg TS%: {avg_ts:.1f}",
+        y=avg_ft_percentage, line_dash="dash", line_color="gray",
+        annotation_text=f"Avg FT%: {avg_ft_percentage:.1f}",
     )
     fig.add_vline(
         x=avg_ftr, line_dash="dash", line_color="gray",
