@@ -357,6 +357,19 @@ def shot_usage(df: pd.DataFrame, output_col: str = "Shot_Usage") -> pd.DataFrame
     df[output_col] = (df["FGA_Tot"] + 0.44 * df["FTA_Tot"] + df["TO_Tot"]).round(1)
     return df
 
+def usage_share(df: pd.DataFrame, output_col: str = "Usage_Share") -> pd.DataFrame:
+    """Calculate usage share (player's usage as % of team total).
+    
+    Formula: Shot_Usage / sum(Shot_Usage) * 100
+    """
+    df = df.copy()
+    _validate_columns(df, {"Shot_Usage"}, "usage_share")
+    total_shot_usage = df["Shot_Usage"].sum()
+    if total_shot_usage > 0:
+        df[output_col] = (df["Shot_Usage"] / total_shot_usage).round(2)
+    else:
+        df[output_col] = pd.Series(0.0, index=df.index)
+    return df
 
 def calculate_team_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -399,6 +412,7 @@ def calculate_team_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = team_foul_drawn_rate(df)
     df = win_percentage(df)
     df = points_per_game_differential(df)
+    # df = shot_usage(df)
 
     return df
 
@@ -418,6 +432,7 @@ def calculate_players_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     df = shot_usage(df)
+    df = usage_share(df)
     df = true_shooting_percentage(df, scored_col="Pts_Tot")
     df = effective_field_goal_percentage(df)
     df = calculate_shot_distribution(df, scored_col="Pts_Tot")
@@ -426,6 +441,5 @@ def calculate_players_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = assist_share(df)
     df = offensive_rebound_rate(df)
     df = player_foul_drawn_rate(df)
-
     return df
 
