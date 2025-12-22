@@ -360,7 +360,7 @@ def shot_usage(df: pd.DataFrame, output_col: str = "Shot_Usage") -> pd.DataFrame
 def usage_share(df: pd.DataFrame, output_col: str = "Usage_Share") -> pd.DataFrame:
     """Calculate usage share (player's usage as % of team total).
     
-    Formula: Shot_Usage / sum(Shot_Usage) * 100
+    Formula: Shot_Usage / sum(Shot_Usage)
     """
     df = df.copy()
     _validate_columns(df, {"Shot_Usage"}, "usage_share")

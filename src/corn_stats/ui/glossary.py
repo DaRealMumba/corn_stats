@@ -94,7 +94,8 @@ def render_glossary() -> None:
         "AST_Share": "Assist share - percentage of team's assists used by a player: AST_Tot / sum(AST_Tot) * 100",
         "ORBr": "Offensive rebound rate - percentage of team's offensive rebounds used by a player: ORB_Tot / sum(ORB_Tot) * 100",
         "PFDr": "Personal foul drawn rate - percentage of team's personal fouls drawn used by a player: PFD_Tot / sum(PFD_Tot) * 100",
-        "Shot_Usage": "Shot usage - number of possessions a player uses through field goal attempts, free throw attempts (weighted), and turnovers: FGA_Tot + 0.44 * FTA_Tot + TO_Tot",
+        "Shot_Usage": "Shot usage - number of possessions a player uses finishing a shot, free throw, or turning the ball over: FGA_Tot + 0.44 * FTA_Tot + TO_Tot",
+        "Usage_Share": "Usage share - percentage of team's possessions used by a player. Possession ends when player takes a shot, free throw or turns the ball over. Possessions do not include offensive rebounds: Shot_Usage / sum(Shot_Usage) * 100",
     }
     
     # Render metrics in the same order as TEAM_STATS_COLUMN_ORDER
