@@ -91,9 +91,9 @@ Once installed, `corn_stats` can be imported anywhere without tweaking `sys.path
 
 - **Compute advanced metrics for a dataset:**
   ```python
-  from corn_stats.features import calculate_all_advanced_stats
+  from corn_stats.features import calculate_team_advanced_stats
 
-  metrics_df = calculate_all_advanced_stats(team_df)
+  metrics_df = calculate_team_advanced_stats(team_df)
   ```
 
 ## Available Metrics

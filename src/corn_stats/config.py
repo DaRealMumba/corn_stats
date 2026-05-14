@@ -20,7 +20,12 @@ LOGO_DIR = ASSETS_DIR / "logos"
 TABLE_URL = "https://cornliga.com/seasons/2025-26/leagues/north-liga"
 TEAMS_URL = "https://cornliga.com/seasons/2025-26/leagues/north-liga/teams"
 
-TEAMS = [
+# Teams excluded from analytics (e.g. only technical losses recorded — distorts averages).
+# Filtered out of the league standings, advanced stats and all charts.
+EXCLUDED_TEAM_SLUGS = frozenset({"koza-nostra"})
+EXCLUDED_TEAM_ABBRS = frozenset({"KOZ"})
+
+_ALL_TEAMS = [
     "ravens-belgrade",
     "belgrade-bulls",
     "kk-sljakeri",
@@ -34,6 +39,90 @@ TEAMS = [
     "koza-nostra",
     "kk-bricklayers",
 ]
+
+TEAMS = [slug for slug in _ALL_TEAMS if slug not in EXCLUDED_TEAM_SLUGS]
+
+# Standard score awarded for a technical win/loss in this league (winner gets `:0`, loser `0:`).
+TECHNICAL_RESULT_SCORE = 20
+
+# Per-team count of technical wins/losses, keyed by team Abbr (as in league table).
+# Two kinds of technical results — see apply_technical_adjustments docstring:
+#   forfeit_*: game was never played (true default 20:0) — subtracted from
+#              Wins/Losses, Games, and Scored/Allowed.
+#   played_*:  game WAS played but score was rewritten to 20:0 (e.g. opponent
+#              was disqualified mid-season). Subtracted from Wins/Losses and
+#              Scored/Allowed, but NOT from Games — the boxscore is still in
+#              team-page totals and must match the games count.
+# League-standings Points (2 per win, 1 per loss) are NOT adjusted — ranking
+# stays factual.
+TECHNICAL_RESULTS: dict[str, dict[str, int]] = {
+    "RVB": {
+        "forfeit_wins": 3,
+        "forfeit_losses": 0,
+        "played_wins": 0,
+        "played_losses": 0,
+    },
+    "BEL": {
+        "forfeit_wins": 2,
+        "forfeit_losses": 0,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+    "KKŠ": {
+        "forfeit_wins": 1,
+        "forfeit_losses": 0,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+    "SAV": {
+        "forfeit_wins": 0,
+        "forfeit_losses": 2,
+        "played_wins": 2,
+        "played_losses": 0,
+    },
+    "PST": {
+        "forfeit_wins": 2,
+        "forfeit_losses": 0,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+    "DVA": {
+        "forfeit_wins": 2,
+        "forfeit_losses": 0,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+    "FRS": {
+        "forfeit_wins": 1,
+        "forfeit_losses": 0,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+    "KT0": {
+        "forfeit_wins": 1,
+        "forfeit_losses": 0,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+    "TUF": {
+        "forfeit_wins": 2,
+        "forfeit_losses": 0,
+        "played_wins": 0,
+        "played_losses": 0,
+    },
+    "PHT": {
+        "forfeit_wins": 1,
+        "forfeit_losses": 3,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+    "BRC": {
+        "forfeit_wins": 2,
+        "forfeit_losses": 0,
+        "played_wins": 1,
+        "played_losses": 0,
+    },
+}
 
 # Column order for team stats DataFrame
 TEAM_STATS_COLUMN_ORDER = [
@@ -123,6 +212,7 @@ TEAM_STATS_COLUMN_ORDER = [
 PLAYER_STATS_COLUMN_ORDER = [
     # Basic info
     "Player",
+    "Team",
     "Age",
     "Games",
     # Points & Efficiency
@@ -190,4 +280,3 @@ PLAYER_STATS_COLUMN_ORDER = [
     "ORBr",
     "PFDr",
 ]
-

@@ -171,10 +171,6 @@ def merge_duplicate_players(
         print(f"Внимание: найдена только 1 запись из {len(player_names)} ожидаемых: {found_name}")
         return df
     
-    if len(duplicate_rows) > len(player_names):
-        print(f"Внимание: найдено больше записей ({len(duplicate_rows)}) чем ожидалось ({len(player_names)}).")
-        return df
-    
     # Определяем колонки по типам
     pct_cols = ["FG%", "2P%", "3P%", "FT%"]
     avg_cols = [col for col in df.columns if col.endswith("_Avg")]
@@ -236,6 +232,88 @@ def merge_duplicate_players(
                 pass  # Оставляем как есть если не удалось преобразовать
     
     return pd.concat([df, merged_df], ignore_index=True)
+
+
+def apply_technical_adjustments(
+    df: pd.DataFrame,
+    technical_results: dict[str, dict[str, int]],
+    score: int,
+    abbr_col: str = "Abbr",
+) -> pd.DataFrame:
+    """Subtract technical wins/losses from league-table aggregates.
+
+    Distinguishes two kinds of technical results per team:
+
+    - ``forfeit_wins`` / ``forfeit_losses`` — game was never played (true
+      default 20:0). Subtracted from Wins/Losses, Games, and Scored/Allowed
+      (``score * count``).
+    - ``played_wins`` / ``played_losses`` — game WAS played, but the league
+      retroactively rewrote the score to ``score``:0 (e.g. opponent was
+      disqualified mid-season). The boxscore is still in team-page totals,
+      so the game must remain in Games. Subtracted from Wins/Losses (the
+      result is technical, not sporting) and from Scored/Allowed (to remove
+      the phantom ``score``), but NOT from Games.
+
+    Recomputes Points_Diff, Pts_Scored_Avg and Pts_Allowed_Avg from the
+    adjusted values. Standings ``Points`` (league points per win/loss) is
+    intentionally left untouched so the ranking still reflects the official
+    table.
+
+    NOT idempotent — call exactly once per league_df.
+    """
+    if not technical_results:
+        return df
+
+    df = df.copy()
+    if abbr_col not in df.columns:
+        return df
+
+    for abbr, counts in technical_results.items():
+        mask = df[abbr_col] == abbr
+        if not mask.any():
+            continue
+
+        forfeit_wins = int(counts.get("forfeit_wins", 0))
+        forfeit_losses = int(counts.get("forfeit_losses", 0))
+        played_wins = int(counts.get("played_wins", 0))
+        played_losses = int(counts.get("played_losses", 0))
+
+        wins_adj = forfeit_wins + played_wins
+        losses_adj = forfeit_losses + played_losses
+        forfeit_games = forfeit_wins + forfeit_losses
+
+        if wins_adj == 0 and losses_adj == 0:
+            continue
+
+        if "Wins" in df.columns:
+            df.loc[mask, "Wins"] = df.loc[mask, "Wins"] - wins_adj
+        if "Losses" in df.columns:
+            df.loc[mask, "Losses"] = df.loc[mask, "Losses"] - losses_adj
+        if "Games" in df.columns:
+            df.loc[mask, "Games"] = df.loc[mask, "Games"] - forfeit_games
+        if "Scored" in df.columns:
+            df.loc[mask, "Scored"] = df.loc[mask, "Scored"] - wins_adj * score
+        if "Allowed" in df.columns:
+            df.loc[mask, "Allowed"] = df.loc[mask, "Allowed"] - losses_adj * score
+
+    if {"Scored", "Allowed"}.issubset(df.columns):
+        df["Points_Diff"] = df["Scored"] - df["Allowed"]
+
+    if {"Scored", "Games"}.issubset(df.columns):
+        games_mask = df["Games"] > 0
+        df.loc[games_mask, "Pts_Scored_Avg"] = (
+            df.loc[games_mask, "Scored"] / df.loc[games_mask, "Games"]
+        ).round(1)
+        df.loc[~games_mask, "Pts_Scored_Avg"] = 0.0
+
+    if {"Allowed", "Games"}.issubset(df.columns):
+        games_mask = df["Games"] > 0
+        df.loc[games_mask, "Pts_Allowed_Avg"] = (
+            df.loc[games_mask, "Allowed"] / df.loc[games_mask, "Games"]
+        ).round(1)
+        df.loc[~games_mask, "Pts_Allowed_Avg"] = 0.0
+
+    return df
 
 
 def reorder_team_stats_columns(df: pd.DataFrame) -> pd.DataFrame:

@@ -55,21 +55,21 @@ def calculate_shot_distribution(
     df: pd.DataFrame,
     multiplier: float = 100.0,
     decimals: int = 1,
-    scored_col: str = "Scored",
 ) -> pd.DataFrame:
     """Calculate shot distribution (% of points from 2P, 3P, FT).
-    
-    Args:
-        df: DataFrame with shooting statistics
-        multiplier: Multiplier for percentage (default 100.0)
-        decimals: Number of decimal places (default 1)
-        scored_col: Column name for total points (default "Scored", use "Pts_Tot" for players)
+
+    The denominator is the points implied by the shot counts themselves
+    (2*2PM + 3*3PM + FTM), not a league-table or aggregate "points" column.
+    This guarantees the three shares sum to 100% and avoids contamination
+    from points that did not come from any shot (e.g. technical-result points
+    which inflate aggregate totals without any associated shot).
     """
     df = df.copy()
-    _validate_columns(df, {"2PM_Tot", "3PM_Tot", "FTM_Tot", scored_col}, "calculate_shot_distribution")
-    df["%Pts_2P"] = (_safe_divide(2 * df["2PM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)   
-    df["%Pts_3P"] = (_safe_divide(3 * df["3PM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)
-    df["%Pts_FT"] = (_safe_divide(df["FTM_Tot"], df[scored_col], default=0.0) * multiplier).round(decimals)
+    _validate_columns(df, {"2PM_Tot", "3PM_Tot", "FTM_Tot"}, "calculate_shot_distribution")
+    implied_total = 2 * df["2PM_Tot"] + 3 * df["3PM_Tot"] + df["FTM_Tot"]
+    df["%Pts_2P"] = (_safe_divide(2 * df["2PM_Tot"], implied_total, default=0.0) * multiplier).round(decimals)
+    df["%Pts_3P"] = (_safe_divide(3 * df["3PM_Tot"], implied_total, default=0.0) * multiplier).round(decimals)
+    df["%Pts_FT"] = (_safe_divide(df["FTM_Tot"], implied_total, default=0.0) * multiplier).round(decimals)
     return df
 
 
@@ -435,7 +435,7 @@ def calculate_players_advanced_stats(df: pd.DataFrame) -> pd.DataFrame:
     df = usage_share(df)
     df = true_shooting_percentage(df, scored_col="Pts_Tot")
     df = effective_field_goal_percentage(df)
-    df = calculate_shot_distribution(df, scored_col="Pts_Tot")
+    df = calculate_shot_distribution(df)
     df = calculate_shot_rate(df)
     df = assist_to_turnover_ratio(df)
     df = assist_share(df)
