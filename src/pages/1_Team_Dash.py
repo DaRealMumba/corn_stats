@@ -8,14 +8,22 @@ import streamlit as st
 from requests import RequestException
 
 from corn_stats.config import (
+    EXCLUDED_TEAM_ABBRS,
     TABLES_DATA_PATH,
     TABLE_URL,
     TEAMS,
+    TECHNICAL_RESULTS,
+    TECHNICAL_RESULT_SCORE,
     RAW_TEAMS_DATA_PATH,
     PROCESSED_TEAMS_DATA_PATH,
     TEAMS_URL,
 )
-from corn_stats.data import get_league_table, parse_team_page_wide, reorder_team_stats_columns
+from corn_stats.data import (
+    apply_technical_adjustments,
+    get_league_table,
+    parse_team_page_wide,
+    reorder_team_stats_columns,
+)
 from corn_stats.features import calculate_team_advanced_stats
 from corn_stats.ui import render_glossary
 from corn_stats.viz import scatter_with_logos_plotly
@@ -29,17 +37,33 @@ def _ensure_parent(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
+def _drop_excluded_teams(df: pd.DataFrame, *, reindex_position: bool = False) -> pd.DataFrame:
+    if not EXCLUDED_TEAM_ABBRS or "Abbr" not in df.columns:
+        return df
+    df = df[~df["Abbr"].isin(EXCLUDED_TEAM_ABBRS)].copy()
+    if reindex_position:
+        df.index = range(1, len(df) + 1)
+        df.index.name = "Position"
+    return df
+
+
+def _post_process_league_table(df: pd.DataFrame) -> pd.DataFrame:
+    df = _drop_excluded_teams(df, reindex_position=True)
+    df = apply_technical_adjustments(df, TECHNICAL_RESULTS, TECHNICAL_RESULT_SCORE)
+    return df
+
+
 @st.cache_data(show_spinner=False)
 def load_league_table(force_refresh: bool = False) -> pd.DataFrame:
     if force_refresh or not LEAGUE_TABLE_FILE.exists():
         _ensure_parent(LEAGUE_TABLE_FILE)
         df = get_league_table(TABLE_URL)
         df.to_csv(LEAGUE_TABLE_FILE, index=True)
-        return df
+        return _post_process_league_table(df)
 
     df = pd.read_csv(LEAGUE_TABLE_FILE, index_col=0)
     df.index.name = "Position"
-    return df
+    return _post_process_league_table(df)
 
 
 @st.cache_data(show_spinner=False)
@@ -47,7 +71,7 @@ def load_team_stats(
     league_df: pd.DataFrame, *, force_refresh: bool = False
 ) -> pd.DataFrame:
     if not force_refresh and ADV_TEAM_STATS_FILE.exists():
-        return pd.read_csv(ADV_TEAM_STATS_FILE)
+        return _drop_excluded_teams(pd.read_csv(ADV_TEAM_STATS_FILE))
 
     _ensure_parent(RAW_TEAM_STATS_FILE)
 

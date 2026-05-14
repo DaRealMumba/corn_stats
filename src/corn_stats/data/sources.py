@@ -7,6 +7,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
+from corn_stats.config import EXCLUDED_TEAM_ABBRS
 from corn_stats.data.cleaning import clean_team_name, normalize_string, normalize_player_stats_columns, merge_duplicate_players
 
 
@@ -84,7 +85,10 @@ def get_league_table(table_url: str) -> pd.DataFrame:
     selected["Team"] = team_data.apply(lambda x: x[0])
     selected["Abbr"] = team_data.apply(lambda x: x[1])
 
-    # Set position as index (1-based ranking instead of 0-11)
+    if EXCLUDED_TEAM_ABBRS:
+        selected = selected[~selected["Abbr"].isin(EXCLUDED_TEAM_ABBRS)].copy()
+
+    # Set position as index (1-based ranking instead of 0-N)
     selected.index = range(1, len(selected) + 1)
     selected.index.name = "Position"
 
